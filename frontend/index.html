@@ -7,195 +7,260 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
+:root {
+  --accent: #00897b;
+  --accent-dark: #00695c;
+  --accent-light: #e0f2f1;
+  --blue: #1565c0;
+  --text: #1a1a2e;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+  --bg: #f0f4f8;
+  --card-shadow: 0 2px 12px rgba(0,0,0,.07);
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-       display: flex; height: 100vh; background: #f5f5f5; color: #222; }
+       display: flex; height: 100vh; background: var(--bg); color: var(--text); }
 
 /* ─── Sidebar ─────────────────────────────────────────────── */
-#sidebar { width: 440px; overflow-y: auto; background: #fff;
-           box-shadow: 2px 0 8px rgba(0,0,0,.1); z-index: 1000;
+#sidebar { width: 380px; flex-shrink: 0; overflow-y: auto; background: #fff;
+           box-shadow: 2px 0 16px rgba(0,0,0,.06); z-index: 1000;
            display: flex; flex-direction: column; }
-#sidebar-header { padding: 14px 16px; background: #1a73e8; color: #fff;
-                  display: flex; justify-content: space-between; align-items: center; }
-#sidebar-header h1 { font-size: 1em; letter-spacing: .5px; }
-#btn-prefs { background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.4);
-             color: #fff; border-radius: 4px; padding: 4px 10px; font-size: .8em;
-             cursor: pointer; }
-#btn-prefs:hover { background: rgba(255,255,255,.3); }
 
-.input-group { padding: 10px 16px; border-bottom: 1px solid #eee; position: relative; }
-.input-group label { display: block; font-size: .78em; color: #666;
-                     margin-bottom: 4px; font-weight: 600; }
-.input-group input, .input-group select { width: 100%; padding: 7px 10px;
-    border: 1px solid #ddd; border-radius: 4px; font-size: .88em; background: #fff; }
-.input-group input:focus, .input-group select:focus { outline: none; border-color: #1a73e8; }
-.addr-input { padding-right: 36px !important; }
+/* ─── Results Panel ────────────────────────────────────────── */
+#results-panel { width: 0; overflow: hidden; background: #fff;
+                 border-right: 1px solid var(--border); z-index: 999;
+                 display: flex; flex-direction: column;
+                 transition: width .3s ease; flex-shrink: 0; }
+#results-panel.open { width: 400px; overflow-y: auto; }
+#results-panel-inner { min-width: 400px; padding-bottom: 20px; }
 
-#btn-route { width: calc(100% - 32px); margin: 10px 16px; padding: 11px;
-             background: #1a73e8; color: #fff; border: none; border-radius: 6px;
-             font-size: .95em; cursor: pointer; font-weight: 600; }
-#btn-route:hover { background: #1557b0; }
-#btn-route:disabled { background: #aaa; cursor: not-allowed; }
+/* ─── Header ─────────────────────────────────────────────── */
+#sidebar-header { padding: 18px 20px;
+                  background: linear-gradient(135deg, var(--blue) 0%, var(--accent) 100%);
+                  color: #fff; display: flex; justify-content: space-between;
+                  align-items: center; }
+#sidebar-header h1 { font-size: 1em; font-weight: 700; letter-spacing: .3px; }
+#btn-prefs { background: rgba(255,255,255,.18); border: 1.5px solid rgba(255,255,255,.5);
+             color: #fff; border-radius: 20px; padding: 5px 14px; font-size: .8em;
+             cursor: pointer; font-weight: 600; transition: background .2s; }
+#btn-prefs:hover { background: rgba(255,255,255,.28); }
 
-/* GPS */
-.gps-btn { position: absolute; right: 24px; top: 26px; background: none;
-           border: none; cursor: pointer; font-size: 1.1em; color: #888;
-           padding: 4px; border-radius: 4px; }
-.gps-btn:hover { color: #1a73e8; background: #e8f0fe; }
-.gps-btn.active { color: #1a73e8; }
+/* ─── Input groups ────────────────────────────────────────── */
+.input-group { padding: 12px 18px; border-bottom: 1px solid var(--border); position: relative; }
+.input-group label { display: block; font-size: .72em; color: var(--text-muted);
+                     margin-bottom: 5px; font-weight: 700; text-transform: uppercase;
+                     letter-spacing: .4px; }
+.input-group input, .input-group select { width: 100%; padding: 9px 12px;
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    font-size: .88em; background: #fff; color: var(--text); transition: border-color .2s; }
+.input-group input:focus, .input-group select:focus { outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,137,123,.12); }
+.addr-input { padding-right: 38px !important; }
 
-/* Autocomplete */
-.ac-list { position: absolute; left: 16px; right: 16px; top: 100%;
-           background: #fff; border: 1px solid #ddd; border-top: none;
-           border-radius: 0 0 6px 6px; max-height: 200px; overflow-y: auto;
-           z-index: 2000; box-shadow: 0 4px 12px rgba(0,0,0,.15); display: none; }
+/* ─── Route Button ─────────────────────────────────────────── */
+#btn-route { width: calc(100% - 36px); margin: 14px 18px; padding: 13px;
+             background: linear-gradient(135deg, var(--accent) 0%, #26a69a 100%);
+             color: #fff; border: none; border-radius: 24px;
+             font-size: .95em; cursor: pointer; font-weight: 700;
+             box-shadow: 0 4px 14px rgba(0,137,123,.35);
+             transition: opacity .2s, box-shadow .2s; }
+#btn-route:hover { opacity: .92; box-shadow: 0 6px 18px rgba(0,137,123,.4); }
+#btn-route:disabled { background: #b0bec5; box-shadow: none; cursor: not-allowed; }
+
+/* ─── GPS ─────────────────────────────────────────────────── */
+.gps-btn { position: absolute; right: 26px; top: 28px; background: none;
+           border: none; cursor: pointer; font-size: 1.1em; color: #aaa;
+           padding: 4px; border-radius: 6px; transition: color .2s; }
+.gps-btn:hover { color: var(--accent); background: var(--accent-light); }
+.gps-btn.active { color: var(--accent); }
+
+/* ─── Autocomplete ────────────────────────────────────────── */
+.ac-list { position: absolute; left: 18px; right: 18px; top: 100%;
+           background: #fff; border: 1.5px solid var(--border); border-top: none;
+           border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+           max-height: 200px; overflow-y: auto;
+           z-index: 2000; box-shadow: 0 8px 20px rgba(0,0,0,.12); display: none; }
 .ac-list.show { display: block; }
-.ac-item { padding: 7px 12px; cursor: pointer; font-size: .83em;
+.ac-item { padding: 8px 14px; cursor: pointer; font-size: .84em;
            border-bottom: 1px solid #f5f5f5; }
-.ac-item:hover, .ac-item.selected { background: #e8f0fe; }
-.ac-item small { color: #888; display: block; font-size: .78em; }
+.ac-item:hover, .ac-item.selected { background: var(--accent-light); }
+.ac-item small { color: var(--text-muted); display: block; font-size: .78em; }
 
-/* Results */
-#results { flex: 1; overflow-y: auto; padding: 0 16px 16px; }
-.result-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px;
-               margin-top: 10px; overflow: hidden; display: none; }
-.result-card.active { display: block; border-color: #1a73e8;
-                       box-shadow: 0 0 0 2px rgba(26,115,232,.2); }
+/* ─── Results ──────────────────────────────────────────────── */
+#results { padding: 0 16px 16px; }
+.result-card { background: #fff; border: 1.5px solid var(--border);
+               border-radius: var(--radius); margin-top: 12px;
+               overflow: hidden; display: none;
+               box-shadow: var(--card-shadow); transition: box-shadow .2s; }
+.result-card.active { display: block; border-color: var(--accent);
+                       box-shadow: 0 0 0 3px rgba(0,137,123,.15), var(--card-shadow); }
 .result-card.best-match-card { border-color: #f9a825;
-                                box-shadow: 0 0 0 2px rgba(249,168,37,.3); }
+                                box-shadow: 0 0 0 3px rgba(249,168,37,.2), var(--card-shadow); }
 
-/* Route toggles */
-.route-toggle { display: flex; gap: 4px; margin: 10px 0 0; flex-wrap: wrap; }
-.route-toggle button { flex: 1; min-width: 55px; padding: 6px 4px;
-    border: 2px solid #ddd; border-radius: 6px; background: #fff;
-    font-size: .73em; font-weight: 600; cursor: pointer; transition: all .2s; }
-.route-toggle button:hover { background: #f5f5f5; }
+/* ─── Route toggles ───────────────────────────────────────── */
+.route-toggle { display: flex; gap: 6px; margin: 12px 0 0; flex-wrap: wrap; }
+.route-toggle button { flex: 1; min-width: 55px; padding: 7px 4px;
+    border: 1.5px solid var(--border); border-radius: 20px; background: #fff;
+    font-size: .73em; font-weight: 700; cursor: pointer; transition: all .2s; color: var(--text-muted); }
+.route-toggle button:hover { background: var(--bg); border-color: #bbb; }
 .route-toggle button.active { color: #fff; border-color: transparent; }
-.route-toggle button[data-route="car"].active { background: #e53935; }
-.route-toggle button[data-route="pr"].active { background: #43a047; }
-.route-toggle button[data-route="at"].active { background: #ff9800; }
-.route-toggle button[data-route="br"].active { background: #1e88e5; }
+.route-toggle button[data-route="car"].active  { background: #e53935; }
+.route-toggle button[data-route="pr"].active   { background: #43a047; }
+.route-toggle button[data-route="at"].active   { background: #fb8c00; }
+.route-toggle button[data-route="br"].active   { background: #1e88e5; }
 .route-toggle button[data-route="best"].active { background: #f9a825; }
 
-.card-header { padding: 10px 14px; display: flex; justify-content: space-between;
-               align-items: center; cursor: pointer; }
-.card-header h3 { font-size: .9em; }
-.card-body { padding: 0 14px 10px; font-size: .83em; }
-.metric { display: flex; justify-content: space-between; padding: 4px 0;
-          border-bottom: 1px solid #f0f0f0; }
+/* ─── Card header/body ────────────────────────────────────── */
+.card-header { padding: 12px 16px; display: flex; justify-content: space-between;
+               align-items: center; cursor: pointer; border-bottom: 1px solid var(--border); }
+.card-header h3 { font-size: .88em; font-weight: 700; }
+.card-body { padding: 12px 16px 14px; font-size: .84em; }
+.metric { display: flex; justify-content: space-between; padding: 5px 0;
+          border-bottom: 1px solid #f3f4f6; }
 .metric:last-child { border: none; }
-.metric-val { font-weight: 600; }
-.badge { display: inline-block; padding: 2px 7px; border-radius: 10px;
-         font-size: .72em; font-weight: 600; color: #fff; }
-.badge-car { background: #e53935; }
-.badge-pr  { background: #43a047; }
-.badge-at  { background: #ff9800; }
-.badge-br  { background: #1e88e5; }
+.metric-val { font-weight: 700; color: var(--text); }
+.badge { display: inline-block; padding: 3px 9px; border-radius: 12px;
+         font-size: .72em; font-weight: 700; color: #fff; }
+.badge-car  { background: #e53935; }
+.badge-pr   { background: #43a047; }
+.badge-at   { background: #fb8c00; }
+.badge-br   { background: #1e88e5; }
 .badge-best { background: #f9a825; color: #222; }
 
-/* Score */
-.score-gauge { text-align: center; margin: 6px 0; }
-.score-circle { width: 58px; height: 58px; border-radius: 50%;
-                display: inline-flex; align-items: center; justify-content: center;
-                font-size: 1.1em; font-weight: 700; color: #fff; }
+/* ─── Score (large number style, like reference UI) ─────────── */
+.score-gauge { margin: 8px 0 4px; }
+.score-label { font-size: .7em; font-weight: 700; text-transform: uppercase;
+               letter-spacing: .5px; color: var(--text-muted); margin-bottom: 2px; }
+.score-circle { display: inline-block; font-size: 1.6em; font-weight: 800;
+                line-height: 1; }
 
-/* CO2 bars */
-.co2-chart { margin: 10px 0; }
-.co2-bar-row { display: flex; align-items: center; margin: 4px 0; font-size: .78em; }
-.co2-bar-label { width: 50px; text-align: right; margin-right: 8px; }
-.co2-bar-track { flex: 1; height: 16px; background: #eee; border-radius: 3px; overflow: hidden; }
-.co2-bar-fill { height: 100%; border-radius: 3px; transition: width .5s ease; }
-.co2-bar-val { width: 58px; text-align: right; margin-left: 6px; font-weight: 600; }
+/* ─── CO2 bars ────────────────────────────────────────────── */
+.co2-chart { margin: 12px 0; }
+.co2-bar-row { display: flex; align-items: center; margin: 5px 0; font-size: .78em; }
+.co2-bar-label { width: 50px; text-align: right; margin-right: 8px; color: var(--text-muted); }
+.co2-bar-track { flex: 1; height: 10px; background: #eef0f2; border-radius: 5px; overflow: hidden; }
+.co2-bar-fill { height: 100%; border-radius: 5px; transition: width .6s ease; }
+.co2-bar-val { width: 62px; text-align: right; margin-left: 8px; font-weight: 700; }
 
-/* Sliders */
-.slider-group { padding: 7px 16px; }
-.slider-group label { font-size: .78em; color: #555;
+/* ─── Sliders ─────────────────────────────────────────────── */
+.slider-group { padding: 8px 18px; }
+.slider-group label { font-size: .78em; color: var(--text-muted);
                       display: flex; justify-content: space-between; }
-.slider-group input[type=range] { width: 100%; margin: 4px 0; accent-color: #1a73e8; }
-.section-label { padding: 10px 16px 4px; font-size: .72em; font-weight: 700;
-                 color: #999; text-transform: uppercase; letter-spacing: .5px; }
-.advanced-toggle { padding: 4px 16px 8px; font-size: .78em; color: #1a73e8;
+.slider-group input[type=range] { width: 100%; margin: 5px 0; accent-color: var(--accent); }
+.section-label { padding: 12px 18px 5px; font-size: .7em; font-weight: 800;
+                 color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px;
+                 display: flex; align-items: center; gap: 8px; }
+.section-label::before { content: ''; display: inline-block; width: 3px; height: 14px;
+                          background: var(--accent); border-radius: 2px; }
+.advanced-toggle { padding: 4px 18px 10px; font-size: .78em; color: var(--accent);
                    cursor: pointer; text-decoration: underline; }
 
-/* Algo table */
-.algo-toggle { font-size: .78em; color: #1a73e8; cursor: pointer;
+/* ─── Algo table ──────────────────────────────────────────── */
+.algo-toggle { font-size: .78em; color: var(--accent); cursor: pointer;
                padding: 6px 0; text-decoration: underline; }
 .algo-table { width: 100%; border-collapse: collapse; font-size: .78em; margin: 6px 0; }
-.algo-table th, .algo-table td { padding: 4px 6px; text-align: right;
-                                  border-bottom: 1px solid #eee; }
-.algo-table th { text-align: left; font-weight: 600; background: #f8f8f8; }
+.algo-table th, .algo-table td { padding: 5px 6px; text-align: right;
+                                  border-bottom: 1px solid var(--border); }
+.algo-table th { text-align: left; font-weight: 700; background: #f8fafb; }
 .algo-table td:first-child { text-align: left; }
 
-/* Best-Match panel */
-.best-match-panel { background: #fffde7; border: 1px solid #f9a825;
-                    border-radius: 8px; padding: 10px 12px; margin-top: 10px;
+/* ─── Best-Match panel ────────────────────────────────────── */
+.best-match-panel { background: #f0faf9; border: 1.5px solid #80cbc4;
+                    border-radius: var(--radius); padding: 12px 14px; margin-top: 12px;
                     font-size: .82em; }
-.best-match-panel h4 { font-size: .9em; color: #b8860b; margin-bottom: 6px; }
-.maut-reason { color: #555; padding: 2px 0; }
-.maut-reason.plus { color: #2e7d32; }
+.best-match-panel h4 { font-size: .88em; color: var(--accent-dark); margin-bottom: 6px;
+                        font-weight: 700; }
+.maut-reason { color: var(--text-muted); padding: 2px 0; }
+.maut-reason.plus  { color: #2e7d32; }
 .maut-reason.minus { color: #c62828; }
 
-/* Weather panel */
-.weather-row { display: flex; gap: 8px; padding: 8px 16px; font-size: .8em;
-               background: #f0f7ff; border-bottom: 1px solid #dce8f5; }
-.weather-item { flex: 1; text-align: center; }
-.weather-item small { display: block; color: #888; font-size: .85em; }
+/* ─── Results panel header ────────────────────────────────── */
+#results-panel-header { padding: 18px 20px 14px; font-size: .7em; font-weight: 800;
+                         color: var(--text-muted); text-transform: uppercase;
+                         letter-spacing: .8px; border-bottom: 1px solid var(--border);
+                         display: flex; align-items: center; gap: 8px; }
+#results-panel-header::before { content: ''; display: inline-block; width: 3px; height: 14px;
+                                  background: var(--accent); border-radius: 2px; }
 
-/* Preferences overlay */
+/* ─── Weather panel ───────────────────────────────────────── */
+.weather-row { display: flex; gap: 10px; padding: 12px 16px; font-size: .8em;
+               background: #f0faf9; border-bottom: 1px solid #b2dfdb;
+               flex-wrap: wrap; }
+.weather-item { flex: 1; min-width: 110px; }
+.weather-item b { color: var(--accent-dark); }
+.weather-item small { display: block; color: var(--text-muted); font-size: .85em; }
+
+/* ─── Preferences overlay ─────────────────────────────────── */
 #prefs-overlay { display: none; position: fixed; inset: 0;
-                 background: rgba(0,0,0,.4); z-index: 3000;
+                 background: rgba(0,0,0,.35); z-index: 3000;
                  align-items: center; justify-content: center; }
 #prefs-overlay.show { display: flex; }
-#prefs-panel { background: #fff; border-radius: 10px; padding: 20px;
-               width: 380px; max-height: 85vh; overflow-y: auto;
-               box-shadow: 0 8px 32px rgba(0,0,0,.25); }
-#prefs-panel h2 { font-size: 1em; margin-bottom: 14px; color: #1a73e8; }
-.pref-section { margin-bottom: 14px; }
-.pref-section h4 { font-size: .8em; font-weight: 700; color: #999;
-                   text-transform: uppercase; margin-bottom: 6px; }
+#prefs-panel { background: #fff; border-radius: var(--radius); padding: 22px;
+               width: 390px; max-height: 86vh; overflow-y: auto;
+               box-shadow: 0 12px 40px rgba(0,0,0,.2); }
+#prefs-panel h2 { font-size: 1em; margin-bottom: 16px; color: var(--accent); font-weight: 700; }
+.pref-section { margin-bottom: 16px; }
+.pref-section h4 { font-size: .72em; font-weight: 800; color: var(--text-muted);
+                   text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px;
+                   padding-bottom: 4px; border-bottom: 2px solid var(--accent-light); }
 .toggle-row { display: flex; justify-content: space-between; align-items: center;
-              padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: .85em; }
+              padding: 7px 0; border-bottom: 1px solid #f3f4f6; font-size: .85em; }
 .toggle-row:last-child { border: none; }
-.toggle { position: relative; width: 40px; height: 22px; }
+.toggle { position: relative; width: 42px; height: 24px; }
 .toggle input { opacity: 0; width: 0; height: 0; }
-.toggle-slider { position: absolute; inset: 0; background: #ccc;
-                 border-radius: 22px; cursor: pointer; transition: .3s; }
+.toggle-slider { position: absolute; inset: 0; background: #cbd5e1;
+                 border-radius: 24px; cursor: pointer; transition: .3s; }
 .toggle-slider:before { content: ''; position: absolute; width: 18px; height: 18px;
-                         left: 2px; bottom: 2px; background: #fff; border-radius: 50%;
-                         transition: .3s; }
-input:checked + .toggle-slider { background: #1a73e8; }
+                         left: 3px; bottom: 3px; background: #fff; border-radius: 50%;
+                         transition: .3s; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+input:checked + .toggle-slider { background: var(--accent); }
 input:checked + .toggle-slider:before { transform: translateX(18px); }
-.pref-slider-row { padding: 6px 0; font-size: .83em; }
+.pref-slider-row { padding: 7px 0; font-size: .83em; }
 .pref-slider-row label { display: flex; justify-content: space-between; margin-bottom: 4px; }
-.pref-slider-row input[type=range] { width: 100%; accent-color: #1a73e8; }
-.pref-number-row { padding: 5px 0; font-size: .83em;
+.pref-slider-row input[type=range] { width: 100%; accent-color: var(--accent); }
+.pref-number-row { padding: 6px 0; font-size: .83em;
                    display: flex; justify-content: space-between; align-items: center; }
-.pref-number-row input[type=number] { width: 70px; padding: 4px 6px;
-    border: 1px solid #ddd; border-radius: 4px; font-size: .9em; }
-#btn-save-prefs { width: 100%; margin-top: 12px; padding: 10px;
-                  background: #1a73e8; color: #fff; border: none; border-radius: 6px;
-                  font-size: .9em; cursor: pointer; font-weight: 600; }
-#btn-save-prefs:hover { background: #1557b0; }
+.pref-number-row input[type=number] { width: 74px; padding: 5px 8px;
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: .9em; }
+.profile-btn { padding: 5px 12px; border: 1.5px solid var(--border); border-radius: 16px;
+               background: #fff; font-size: .78em; font-weight: 600; cursor: pointer;
+               color: var(--text-muted); transition: all .2s; }
+.profile-btn:hover { border-color: var(--accent); color: var(--accent); }
+.profile-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+#btn-save-prefs { width: 100%; margin-top: 14px; padding: 12px;
+                  background: linear-gradient(135deg, var(--accent) 0%, #26a69a 100%);
+                  color: #fff; border: none; border-radius: 24px;
+                  font-size: .9em; cursor: pointer; font-weight: 700;
+                  box-shadow: 0 4px 12px rgba(0,137,123,.3); }
+#btn-save-prefs:hover { opacity: .92; }
 #btn-close-prefs { float: right; background: none; border: none;
-                   font-size: 1.4em; cursor: pointer; color: #666; line-height: 1; }
+                   font-size: 1.4em; cursor: pointer; color: #9ca3af; line-height: 1; }
 
-/* Notice */
-.notice { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px;
-          padding: 10px; margin-top: 10px; font-size: .82em; }
-.notice.error { background: #ffebee; border-color: #e53935; }
+/* ─── Notice ──────────────────────────────────────────────── */
+.notice { background: #fffbeb; border: 1.5px solid #fbbf24; border-radius: var(--radius-sm);
+          padding: 11px 14px; margin-top: 12px; font-size: .82em; }
+.notice.error { background: #fef2f2; border-color: #f87171; }
 
-/* Spinner */
+/* ─── Spinner ─────────────────────────────────────────────── */
 .spinner { display: inline-block; width: 18px; height: 18px;
-           border: 3px solid #ddd; border-top-color: #1a73e8;
-           border-radius: 50%; animation: spin .8s linear infinite; }
+           border: 3px solid rgba(255,255,255,.4); border-top-color: #fff;
+           border-radius: 50%; animation: spin .8s linear infinite;
+           vertical-align: middle; margin-right: 4px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 #map { flex: 1; }
 
-@media (max-width: 800px) {
+@media (max-width: 900px) {
   body { flex-direction: column; }
-  #sidebar { width: 100%; max-height: 50vh; }
-  #map { height: 50vh; }
+  #sidebar { width: 100%; max-height: 45vh; }
+  #results-panel { width: 100% !important; max-height: 40vh; overflow-y: auto; }
+  #results-panel-inner { min-width: unset; }
+  #map { height: 50vh; flex: unset; }
 }
 </style>
 </head>
@@ -237,47 +302,15 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
     </select>
   </div>
 
-  <div class="section-label">Praferenzen</div>
-  <div class="input-group">
-    <label>Komfort-Profil</label>
-    <select id="profile">
-      <option value="balanced">Ausgewogen</option>
-      <option value="eco">Umweltbewusst (CO2 priorisiert)</option>
-      <option value="fast">Zeitoptimiert</option>
-      <option value="cheap">Sparfuchs</option>
-      <option value="custom">Benutzerdefiniert...</option>
-    </select>
-  </div>
-
-  <div class="slider-group">
-    <label>Max. Fahrradstrecke <span id="max-bike-val">5 km</span></label>
-    <input type="range" id="max-bike" min="0" max="15" value="5" step="1">
-  </div>
-  <div class="slider-group">
-    <label>Max. Fussweg <span id="max-walk-val">800 m</span></label>
-    <input type="range" id="max-walk" min="100" max="2000" value="800" step="100">
-  </div>
-
-  <div class="advanced-toggle" id="advanced-toggle">Erweiterte Gewichtungen anzeigen</div>
-  <div id="advanced-weights" style="display:none">
-    <div class="slider-group">
-      <label>CO2-Gewichtung <span id="w-co2-val">40%</span></label>
-      <input type="range" id="w-co2" min="0" max="100" value="40">
-    </div>
-    <div class="slider-group">
-      <label>Zeit-Gewichtung <span id="w-time-val">35%</span></label>
-      <input type="range" id="w-time" min="0" max="100" value="35">
-    </div>
-    <div class="slider-group">
-      <label>Kosten-Gewichtung <span id="w-cost-val">25%</span></label>
-      <input type="range" id="w-cost" min="0" max="100" value="25">
-    </div>
-  </div>
-
   <button id="btn-route">Route berechnen</button>
+</div>
 
-  <div id="weather-panel"></div>
-  <div id="results"></div>
+<div id="results-panel">
+  <div id="results-panel-inner">
+    <div id="results-panel-header">Routen-Ergebnis</div>
+    <div id="weather-panel"></div>
+    <div id="results"></div>
+  </div>
 </div>
 
 <div id="map"></div>
@@ -318,15 +351,26 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 
     <div class="pref-section">
       <h4>Gewichtung</h4>
-      <div class="pref-slider-row">
-        <label><span>Zeit vs. Umwelt</span><span id="pref-time-env-val">50</span></label>
-        <input type="range" id="pref-time-vs-env" min="0" max="100" value="50">
-        <div style="display:flex;justify-content:space-between;font-size:.72em;color:#888">
-          <span>Umwelt</span><span>Zeit</span></div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:.75em;color:var(--text-muted);margin-bottom:6px">Schnellauswahl:</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="profile-btn" data-profile="balanced">Ausgewogen</button>
+          <button class="profile-btn" data-profile="eco">Umwelt</button>
+          <button class="profile-btn" data-profile="fast">Schnell</button>
+          <button class="profile-btn" data-profile="cheap">Gunstig</button>
+        </div>
       </div>
       <div class="pref-slider-row">
-        <label><span>Komfort &amp; Umstiege</span><span id="pref-comfort-val">60</span></label>
-        <input type="range" id="pref-comfort" min="0" max="100" value="60">
+        <label><span>CO₂-Gewichtung</span><span id="w-co2-val">40%</span></label>
+        <input type="range" id="w-co2" min="0" max="100" value="40">
+      </div>
+      <div class="pref-slider-row">
+        <label><span>Zeit-Gewichtung</span><span id="w-time-val">35%</span></label>
+        <input type="range" id="w-time" min="0" max="100" value="35">
+      </div>
+      <div class="pref-slider-row">
+        <label><span>Kosten-Gewichtung</span><span id="w-cost-val">25%</span></label>
+        <input type="range" id="w-cost" min="0" max="100" value="25">
       </div>
     </div>
 
@@ -383,10 +427,10 @@ function applyPrefsToUI(p) {
   document.getElementById('pref-mode-walk').checked = !!p.mode_walk;
   document.getElementById('pref-max-walk-km').value = p.max_walk_km ?? 1.5;
   document.getElementById('pref-max-bike-km').value = p.max_bike_km ?? 10;
-  document.getElementById('pref-time-vs-env').value = p.pref_time_vs_env ?? 50;
-  document.getElementById('pref-time-env-val').textContent = p.pref_time_vs_env ?? 50;
-  document.getElementById('pref-comfort').value = p.pref_comfort ?? 60;
-  document.getElementById('pref-comfort-val').textContent = p.pref_comfort ?? 60;
+  wCo2.value = p.weight_co2_pct ?? 40;
+  wTime.value = p.weight_time_pct ?? 35;
+  wCost.value = p.weight_cost_pct ?? 25;
+  updateSliderLabels();
   document.getElementById('pref-bike-temp').value  = p.comfort_bike_temp ?? 15;
   document.getElementById('pref-walk-temp').value  = p.comfort_walk_temp ?? 10;
   document.getElementById('pref-covered').checked  = !!p.prefer_covered_modes;
@@ -401,20 +445,15 @@ function collectPrefs() {
     mode_walk:  document.getElementById('pref-mode-walk').checked,
     max_walk_km: +document.getElementById('pref-max-walk-km').value,
     max_bike_km: +document.getElementById('pref-max-bike-km').value,
-    pref_time_vs_env: +document.getElementById('pref-time-vs-env').value,
-    pref_comfort: +document.getElementById('pref-comfort').value,
+    weight_co2_pct:  +wCo2.value,
+    weight_time_pct: +wTime.value,
+    weight_cost_pct: +wCost.value,
     comfort_bike_temp: +document.getElementById('pref-bike-temp').value,
     comfort_walk_temp: +document.getElementById('pref-walk-temp').value,
     prefer_covered_modes: document.getElementById('pref-covered').checked,
     reduce_car_in_snow:   document.getElementById('pref-snow').checked,
   };
 }
-
-// Slider live labels
-document.getElementById('pref-time-vs-env').oninput = e =>
-  document.getElementById('pref-time-env-val').textContent = e.target.value;
-document.getElementById('pref-comfort').oninput = e =>
-  document.getElementById('pref-comfort-val').textContent = e.target.value;
 
 // Overlay
 document.getElementById('btn-prefs').addEventListener('click', () =>
@@ -560,38 +599,35 @@ setupGPS('gps-end',   'end-addr',   endCoords);
 // ─── Komfort-Profile ─────────────────────────────────────────
 const PROFILES = { balanced:{co2:40,time:35,cost:25}, eco:{co2:60,time:20,cost:20},
                    fast:{co2:20,time:60,cost:20}, cheap:{co2:20,time:20,cost:60} };
-const profileSelect = document.getElementById('profile');
 const wCo2 = document.getElementById('w-co2');
 const wTime = document.getElementById('w-time');
 const wCost = document.getElementById('w-cost');
-
-profileSelect.addEventListener('change', () => {
-  const p = PROFILES[profileSelect.value];
-  if (!p) { document.getElementById('advanced-weights').style.display = ''; return; }
-  wCo2.value = p.co2; wTime.value = p.time; wCost.value = p.cost;
-  updateSliderLabels();
-  if (lastRouteData) recalcScores();
-});
-document.getElementById('advanced-toggle').addEventListener('click', function() {
-  const d = document.getElementById('advanced-weights');
-  d.style.display = d.style.display === 'none' ? '' : 'none';
-  this.textContent = d.style.display === 'none'
-    ? 'Erweiterte Gewichtungen anzeigen' : 'Erweiterte Gewichtungen ausblenden';
-});
 
 function updateSliderLabels() {
   document.getElementById('w-co2-val').textContent = wCo2.value + '%';
   document.getElementById('w-time-val').textContent = wTime.value + '%';
   document.getElementById('w-cost-val').textContent = wCost.value + '%';
 }
+function setActiveProfileBtn(name) {
+  document.querySelectorAll('.profile-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.profile === name));
+}
+document.querySelectorAll('.profile-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const p = PROFILES[btn.dataset.profile];
+    if (!p) return;
+    wCo2.value = p.co2; wTime.value = p.time; wCost.value = p.cost;
+    updateSliderLabels();
+    setActiveProfileBtn(btn.dataset.profile);
+    if (lastRouteData) recalcScores();
+  });
+});
 wCo2.oninput = wTime.oninput = wCost.oninput = () => {
-  profileSelect.value = 'custom'; updateSliderLabels();
+  updateSliderLabels();
+  setActiveProfileBtn(null);
   if (lastRouteData) recalcScores();
 };
-document.getElementById('max-bike').oninput = e =>
-  document.getElementById('max-bike-val').textContent = e.target.value + ' km';
-document.getElementById('max-walk').oninput = e =>
-  document.getElementById('max-walk-val').textContent = e.target.value + ' m';
+setActiveProfileBtn('balanced');
 
 // ─── Score (client-side Neuberechnung) ────────────────────────
 function calcScore(co2Car, co2Alt, timeCar, timeAlt, costCar, costAlt) {
@@ -655,6 +691,7 @@ async function computeRoute() {
   btn.innerHTML = '<span class="spinner"></span> Berechne...';
   resultsDiv.innerHTML = '';
   document.getElementById('weather-panel').innerHTML = '';
+  document.getElementById('results-panel').classList.remove('open');
   Object.values(routeLayerMap).forEach(lg => { lg.clearLayers(); map.removeLayer(lg); });
   activeRoute = null;
 
@@ -665,8 +702,8 @@ async function computeRoute() {
     weight_co2:    +wCo2.value / 100,
     weight_time:   +wTime.value / 100,
     weight_cost:   +wCost.value / 100,
-    max_bike_km:   +document.getElementById('max-bike').value,
-    max_walk_m:    +document.getElementById('max-walk').value,
+    max_bike_km:   +document.getElementById('pref-max-bike-km').value,
+    max_walk_m:    +document.getElementById('pref-max-walk-km').value * 1000,
     algorithm:     document.getElementById('algorithm').value,
     fetch_weather: true,
   };
@@ -688,7 +725,8 @@ async function computeRoute() {
     renderResults(data);
     renderMap(data);
   } catch (e) {
-    resultsDiv.innerHTML = `<div class="notice error">Fehler: ${e.message}</div>`;
+    document.getElementById('results-panel').classList.add('open');
+    resultsDiv.innerHTML = `<div class="notice error" style="margin:12px 16px">Fehler: ${e.message}</div>`;
   } finally {
     btn.disabled = false; btn.textContent = 'Route berechnen';
   }
@@ -732,12 +770,13 @@ function co2EquivHtml(savedG) {
 
 function renderResults(d) {
   const resultsDiv = document.getElementById('results');
+  document.getElementById('results-panel').classList.add('open');
   let html = '';
 
   // CO2-Vergleich
   const car = d.car_only;
   const maxCo2 = car.co2_g;
-  html += '<div class="co2-chart"><b style="font-size:.82em">CO2-Vergleich (g/Fahrt)</b>';
+  html += '<div class="co2-chart"><div style="font-size:.7em;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted);margin-bottom:6px;display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:3px;height:13px;background:var(--accent);border-radius:2px"></span>CO₂-Vergleich (g/Fahrt)</div>';
   html += co2Bar('Auto', car.co2_g, maxCo2, '#e53935');
   if (d.park_and_ride) html += co2Bar('P+R', d.park_and_ride.co2_g, maxCo2, '#43a047');
   if (d.auto_transit)  html += co2Bar('A+ÖV', d.auto_transit.co2_g, maxCo2, '#ff9800');
@@ -799,7 +838,7 @@ function renderResults(d) {
 }
 
 function renderOptionCard(type, title, badgeClass, opt, co2Saved) {
-  const c = opt.score >= 60 ? '#43a047' : opt.score >= 40 ? '#ff9800' : '#e53935';
+  const c = opt.score >= 60 ? 'var(--accent)' : opt.score >= 40 ? '#fb8c00' : '#e53935';
   const isBest = lastRouteData?.best_match?.best_mode?.name === opt.name;
 
   const segHtml = opt.segments.map(s => {
@@ -854,12 +893,12 @@ function renderOptionCard(type, title, badgeClass, opt, co2Saved) {
       <span>${opt.total_time_min} Min</span></div>
     <div class="card-body">
       <div class="score-gauge">
-        <div class="score-circle" style="background:${c}">${opt.score}</div>
-        <div style="font-size:.72em;color:#666;margin-top:3px">Pendler-Score</div>
+        <div class="score-label">Gesamtscore</div>
+        <div class="score-circle" style="color:${c}">${opt.score}</div>
       </div>
       ${segHtml}
-      <div class="metric"><span>Gesamt-CO2</span><span class="metric-val">${opt.co2_g} g</span></div>
-      <div class="metric"><span>CO2 gespart</span><span class="metric-val" style="color:#43a047">${co2Saved} g</span></div>
+      <div class="metric"><span>CO₂</span><span class="metric-val">${opt.co2_g} g</span></div>
+      <div class="metric"><span>CO₂ gespart</span><span class="metric-val" style="color:#2e7d32">▼ ${co2Saved} g</span></div>
       <div class="metric"><span>Kosten</span><span class="metric-val">${opt.cost_eur} €</span></div>
       ${stInfo}
       ${algoHtml}
