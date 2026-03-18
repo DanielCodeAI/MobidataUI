@@ -1,101 +1,209 @@
-# MobiData BW - Multimodales Routing & Scoring
+# MobiDataUnified — Multimodales Pendler-Routing BW
 
-Prototyp fuer multimodale Mobilitaetsbewertung in Baden-Wuerttemberg.
-Nutzt offene Daten der [MobiData BW](https://www.mobidata-bw.de/) Plattform.
+Webapplikation fuer multimodales Routing in Baden-Wuerttemberg.
+Bewertet Routen nach Zeit, CO2 und Kosten — mit Best-Match-Empfehlung, Wetterintegration und interaktiver Karte.
 
-## Funktionen
+**Verfuegbare Modi:** Auto · Park & Ride · Auto + OEPNV · Bike & Ride
 
-- **Routen-Scoring**: Bewertet Mobilitaetsalternativen (Auto, OEPNV, Fahrrad, Fuss, P+R) nach Zeit, CO2 und Energie
-- **GTFS-Daten**: Echte Fahrplandaten des OEPNV in Baden-Wuerttemberg
-- **Verkehrsmeldungen**: Live-Daten zu Verkehrsstoerungen via MobiData BW API
-- **Parkplatzdaten**: P+R und oeffentliche Parkplaetze aus der MobiData BW API
-- **Ladestationen**: Standorte von E-Ladestationen
-- **Wetterdaten**: Aktuelle Wetterbedingungen via Open-Meteo API
+---
 
 ## Voraussetzungen
 
-- Python 3.9+
+| Komponente | Version | Zweck |
+|---|---|---|
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | 24+ | Neo4j Datenbank |
+| [Python](https://www.python.org/downloads/) | 3.9+ | Backend |
+| Browser | aktuell | Frontend |
 
-## Installation
+> **Windows:** Docker Desktop muss mit **WSL2-Backend** installiert sein.
+> Beim Python-Download auf Windows den Haken bei **"Add Python to PATH"** setzen.
+
+---
+
+## Schnellstart
+
+### 1. Repository klonen
 
 ```bash
+git clone https://github.com/DanielCodeAI/MobidataUI.git
+cd MobidataUI
+```
+
+### 2. Neo4j starten (Docker)
+
+```bash
+cd docker
+docker compose up -d
+```
+
+Warten bis Neo4j healthy ist (~30 Sekunden):
+```bash
+docker ps   # Status sollte "(healthy)" zeigen
+```
+
+### 3. Virtuelle Umgebung & Dependencies
+
+**macOS / Linux:**
+```bash
+cd ../backend
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Nutzung
-
-### Scoring ausfuehren (Hauptskript)
-
-Berechnet CO2, Energie und Gesamtscore fuer die Demo-Routen (Stuttgart - Freiburg):
-
-```bash
-python scoring_main.py
+**Windows (PowerShell):**
+```powershell
+cd ..\backend
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
 
-Ergebnis wird in `data/demo/routes_scored_demo.csv` gespeichert.
-
-### Demo-Daten neu generieren
-
-```bash
-python scripts/setup_new_demo.py
+**Windows (CMD):**
+```cmd
+cd ..\backend
+python -m venv .venv
+.venv\Scripts\activate.bat
+pip install -r requirements.txt
 ```
 
-### Wetterdaten abrufen
+### 4. GTFS-Daten in Neo4j importieren
+
+Einmalig beim ersten Start — importiert die BW-Fahrplandaten:
 
 ```bash
-python scripts/fetch_weather.py
+# macOS / Linux
+python import_gtfs.py --gtfs-path ../data/gtfs
+
+# Windows
+python import_gtfs.py --gtfs-path ..\data\gtfs
 ```
 
-### Verkehrsmeldungen abrufen
+> Die GTFS-Daten (~779 MB) koennen von [MobiData BW](https://www.mobidata-bw.de/) heruntergeladen werden.
+> Datei entpacken nach `data/gtfs/`.
 
+### 5. Backend starten
+
+**macOS / Linux:**
 ```bash
-python data/traffic/traffic_fetch.py
+uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### Parkplatz-Subset erstellen
-
-```bash
-python data/parking/parking.py
+**Windows (PowerShell oder CMD):**
+```powershell
+uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 ```
+
+### 6. App im Browser oeffnen
+
+```
+http://localhost:8000
+```
+
+---
 
 ## Projektstruktur
 
 ```
 MobidataUI/
-├── scoring_main.py              # Hauptskript: Scoring der Demo-Routen
-├── requirements.txt
-├── src/
-│   ├── scoring/
-│   │   ├── factors.py           # Lade-Funktionen fuer Emissions-/Energiefaktoren
-│   │   └── scoring_demo.py      # Laedt vorberechnete Demo-Ergebnisse
-│   └── utils/
-│       └── weather.py           # Wetter-API (Open-Meteo) + Geocoding
-├── scripts/
-│   ├── fetch_weather.py         # Wetterdaten abrufen und speichern
-│   └── setup_new_demo.py        # Demo-CSVs neu erzeugen
+├── backend/
+│   ├── app.py                  # FastAPI — alle Endpoints
+│   ├── routing.py              # Routing-Algorithmen (A*, Dijkstra, Greedy) + Neo4j
+│   ├── gtfs_processor.py       # GTFS-Filter, SEV-Erkennung, Stop-Normalisierung
+│   ├── best_match_engine.py    # MAUT-Bewertungsengine (Multi-Kriterien)
+│   ├── weather.py              # Wetter-Integration (Open-Meteo)
+│   ├── constants.py            # CO2-Werte, Geschwindigkeiten, Penalties
+│   ├── requirements.txt
+│   └── Dockerfile
+├── frontend/
+│   └── index.html              # Leaflet-Karte + Sidebar + Praeferenzen
 ├── data/
-│   ├── demo/                    # Demo-Routen und Scoring-Ergebnisse (CSV)
-│   ├── gtfs/                    # GTFS-Fahrplandaten Baden-Wuerttemberg
-│   ├── parking/                 # Parkplatzdaten (JSON/CSV)
-│   ├── traffic/                 # Verkehrsmeldungen (XML/JSON/CSV)
-│   ├── charging/                # E-Ladestationen (CSV)
-│   └── weather/                 # Gespeicherte Wetterdaten
-└── scoring_CSV/                 # Emissions- und Energiefaktoren pro Verkehrsmittel
+│   ├── park_ride.json          # P+R-Stationen
+│   ├── bike_ride.json          # B+R-Abstellanlagen
+│   └── gtfs/                   # GTFS-Daten (separat herunterladen, s.o.)
+└── docker/
+    └── docker-compose.yml      # Neo4j Container
 ```
+
+---
+
+## API-Endpunkte
+
+| Methode | Pfad | Beschreibung |
+|---|---|---|
+| `POST` | `/route` | Multimodales Routing + Best-Match |
+| `GET` | `/preferences` | Nutzer-Praeferenzen laden |
+| `POST` | `/preferences` | Nutzer-Praeferenzen speichern |
+| `GET` | `/api/stops/search?q=` | Haltestellen-Autocomplete |
+| `GET` | `/benchmark?n=100` | Algorithmen-Vergleich |
+| `GET` | `/score-sensitivity` | Score mit 10 Gewichtungsvarianten |
+| `GET` | `/stops` | Alle Haltestellen (fuer Karte) |
+| `GET` | `/parking` | P+R und B+R Stationen |
+| `GET` | `/health` | Status-Check |
+
+---
+
+## Features
+
+### Best-Match-Engine (MAUT)
+Bewertet alle Routen nach einem Multi-Attribute-Utility-Modell:
+- **Zeit-Score** — Reisezeit im Vergleich zu den Alternativen
+- **CO2-Score** — Emissionen (UBA 2024: 152 g/km Auto, 55 g/km OEPNV)
+- **Komfort-Score** — Umstiege, Distanzkomfortzonen
+- **Wetter-Score** — Temperatur, Niederschlag, ueberdachte Modi
+- **Praeferenz-Score** — Aktivierte/deaktivierte Verkehrsmittel
+
+### Routing-Algorithmen
+
+| Algorithmus | Beschreibung |
+|---|---|
+| **A\*** | Standard — schnell & optimal (Haversine-Heuristik) |
+| **Dijkstra** | Referenz — exakt optimal |
+| **Greedy** | Baseline — keine Optimierung |
+
+### Wetter-Integration
+Stuendliche Vorhersagen von [Open-Meteo](https://open-meteo.com/) (kein API-Key noetig).
+Beeinflusst Fahrrad- und Fussweg-Bewertung automatisch.
+
+---
+
+## Konfiguration
+
+Umgebungsvariablen fuer das Backend (`.env` Datei oder direkt setzen):
+
+```env
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASS=mobidata2024
+```
+
+---
 
 ## Datenquellen
 
-| Quelle | Beschreibung |
-|--------|-------------|
-| [MobiData BW](https://www.mobidata-bw.de/) | GTFS, Verkehrsmeldungen, Parkplaetze |
-| [Open-Meteo](https://open-meteo.com/) | Wetter-API (kostenlos, kein API-Key) |
+| Quelle | Daten |
+|---|---|
+| [MobiData BW](https://www.mobidata-bw.de/) | GTFS-Fahrplandaten, P+R-Stationen |
+| [Open-Meteo](https://open-meteo.com/) | Wetter (kostenlos, kein API-Key) |
+| [UBA 2024](https://www.umweltbundesamt.de/) | CO2-Emissionsfaktoren |
+| [OSRM](https://project-osrm.org/) | Autorouten-Geometrien |
+| [Nominatim/OSM](https://nominatim.org/) | Adress-Geocoding |
 
-## Scoring-Modell
+---
 
-Die Routen werden nach drei Kriterien bewertet:
+## Troubleshooting
 
-- **Zeit** (Gewicht: 40%) - Gesamte Reisezeit in Minuten
-- **CO2** (Gewicht: 40%) - CO2-Emissionen in Gramm
-- **Energie** (Gewicht: 20%) - Energieverbrauch in Wh
+**`uvicorn: command not found`**
+→ Virtuelle Umgebung aktivieren (Schritt 3 wiederholen)
 
-Jedes Kriterium wird per Min-Max normalisiert. Der Gesamtscore (0-100) ergibt sich aus der gewichteten Summe.
+**`OEPNV-Daten nicht verfuegbar`**
+→ Neo4j laeuft nicht oder GTFS wurde noch nicht importiert
+
+**Windows: `Activate.ps1 cannot be loaded`**
+→ PowerShell als Administrator oeffnen und einmalig ausfuehren:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+**Docker: `port 7687 already in use`**
+→ Anderer Neo4j-Container laeuft bereits — `docker ps` pruefen und ggf. stoppen
