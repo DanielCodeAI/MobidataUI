@@ -144,7 +144,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 .co2-bar-label { width: 50px; text-align: right; margin-right: 8px; color: var(--text-muted); }
 .co2-bar-track { flex: 1; height: 10px; background: #eef0f2; border-radius: 5px; overflow: hidden; }
 .co2-bar-fill { height: 100%; border-radius: 5px; transition: width .6s ease; }
-.co2-bar-val { width: 62px; text-align: right; margin-left: 8px; font-weight: 700; }
+.co2-bar-val { width: 58px; text-align: right; margin-left: 6px; font-weight: 700; }
+.co2-bar-row > span:last-child { width: 40px; text-align: right; margin-left: 4px; }
 
 /* ─── Sliders ─────────────────────────────────────────────── */
 .slider-group { padding: 8px 18px; }
@@ -749,12 +750,18 @@ function renderWeather(d) {
 }
 
 // ─── Ergebnisse rendern ───────────────────────────────────────
-function co2Bar(label, val, max, color) {
-  const pct = max > 0 ? Math.round(val/max*100) : 0;
+function co2Bar(label, val, carVal, color) {
+  const pct = carVal > 0 ? Math.round(val/carVal*100) : 0;
+  const savedPct = carVal > 0 ? Math.round((carVal - val) / carVal * 100) : 0;
+  const isRef = label === 'Auto';
+  const savingTag = !isRef && savedPct > 0
+    ? `<span style="color:#2e7d32;font-weight:700;font-size:.85em;white-space:nowrap">−${savedPct}%</span>`
+    : `<span style="color:var(--text-muted);font-size:.82em">Referenz</span>`;
   return `<div class="co2-bar-row">
     <span class="co2-bar-label">${label}</span>
     <div class="co2-bar-track"><div class="co2-bar-fill" style="width:${pct}%;background:${color}"></div></div>
-    <span class="co2-bar-val">${val} g</span></div>`;
+    <span class="co2-bar-val">${val} g</span>
+    ${savingTag}</div>`;
 }
 
 function co2EquivHtml(savedG) {
@@ -801,7 +808,6 @@ function renderResults(d) {
     const explanations = bm.best_mode.maut_explanation || [];
     html += `<div class="best-match-panel">
       <h4>⭐ Best Match: ${bm.best_mode.name} (Score: ${bm.best_mode.score_0_100})</h4>
-      ${bm.decision_summary.map(s => `<div class="maut-reason">${s}</div>`).join('')}
       ${explanations.map(e => `<div class="maut-reason ${e.startsWith('Pluspunkt') ? 'plus' : 'minus'}">${e}</div>`).join('')}
     </div>`;
   }
