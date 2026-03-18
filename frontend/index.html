@@ -361,7 +361,6 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
           <button class="profile-btn" data-profile="balanced">Ausgewogen</button>
           <button class="profile-btn" data-profile="eco">Umwelt</button>
           <button class="profile-btn" data-profile="fast">Schnell</button>
-          <button class="profile-btn" data-profile="cheap">Gunstig</button>
         </div>
       </div>
       <div class="pref-slider-row">
@@ -371,10 +370,6 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
       <div class="pref-slider-row">
         <label><span>Zeit-Gewichtung</span><span id="w-time-val">35%</span></label>
         <input type="range" id="w-time" min="0" max="100" value="35">
-      </div>
-      <div class="pref-slider-row">
-        <label><span>Kosten-Gewichtung</span><span id="w-cost-val">25%</span></label>
-        <input type="range" id="w-cost" min="0" max="100" value="25">
       </div>
     </div>
 
@@ -434,9 +429,8 @@ function applyPrefsToUI(p) {
   document.getElementById('pref-mode-walk').checked = !!p.mode_walk;
   document.getElementById('pref-max-walk-km').value = p.max_walk_km ?? 1.5;
   document.getElementById('pref-max-bike-km').value = p.max_bike_km ?? 10;
-  wCo2.value = p.weight_co2_pct ?? 40;
-  wTime.value = p.weight_time_pct ?? 35;
-  wCost.value = p.weight_cost_pct ?? 25;
+  wCo2.value = p.weight_co2_pct ?? 55;
+  wTime.value = p.weight_time_pct ?? 45;
   updateSliderLabels();
   document.getElementById('pref-bike-temp').value  = p.comfort_bike_temp ?? 15;
   document.getElementById('pref-walk-temp').value  = p.comfort_walk_temp ?? 10;
@@ -454,7 +448,6 @@ function collectPrefs() {
     max_bike_km: +document.getElementById('pref-max-bike-km').value,
     weight_co2_pct:  +wCo2.value,
     weight_time_pct: +wTime.value,
-    weight_cost_pct: +wCost.value,
     comfort_bike_temp: +document.getElementById('pref-bike-temp').value,
     comfort_walk_temp: +document.getElementById('pref-walk-temp').value,
     prefer_covered_modes: document.getElementById('pref-covered').checked,
@@ -604,16 +597,13 @@ setupGPS('gps-start', 'start-addr', startCoords);
 setupGPS('gps-end',   'end-addr',   endCoords);
 
 // ─── Komfort-Profile ─────────────────────────────────────────
-const PROFILES = { balanced:{co2:40,time:35,cost:25}, eco:{co2:60,time:20,cost:20},
-                   fast:{co2:20,time:60,cost:20}, cheap:{co2:20,time:20,cost:60} };
+const PROFILES = { balanced:{co2:55,time:45}, eco:{co2:80,time:20}, fast:{co2:20,time:80} };
 const wCo2 = document.getElementById('w-co2');
 const wTime = document.getElementById('w-time');
-const wCost = document.getElementById('w-cost');
 
 function updateSliderLabels() {
   document.getElementById('w-co2-val').textContent = wCo2.value + '%';
   document.getElementById('w-time-val').textContent = wTime.value + '%';
-  document.getElementById('w-cost-val').textContent = wCost.value + '%';
 }
 function setActiveProfileBtn(name) {
   document.querySelectorAll('.profile-btn').forEach(b =>
@@ -623,13 +613,13 @@ document.querySelectorAll('.profile-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const p = PROFILES[btn.dataset.profile];
     if (!p) return;
-    wCo2.value = p.co2; wTime.value = p.time; wCost.value = p.cost;
+    wCo2.value = p.co2; wTime.value = p.time;
     updateSliderLabels();
     setActiveProfileBtn(btn.dataset.profile);
     if (lastRouteData) recalcScores();
   });
 });
-wCo2.oninput = wTime.oninput = wCost.oninput = () => {
+wCo2.oninput = wTime.oninput = () => {
   updateSliderLabels();
   setActiveProfileBtn(null);
   if (lastRouteData) recalcScores();
@@ -637,20 +627,18 @@ wCo2.oninput = wTime.oninput = wCost.oninput = () => {
 setActiveProfileBtn('balanced');
 
 // ─── Score (client-side Neuberechnung) ────────────────────────
-function calcScore(co2Car, co2Alt, timeCar, timeAlt, costCar, costAlt) {
-  const wc = +wCo2.value, wt = +wTime.value, wk = +wCost.value, ws = wc+wt+wk || 1;
+function calcScore(co2Car, co2Alt, timeCar, timeAlt) {
+  const wc = +wCo2.value, wt = +wTime.value, ws = wc + wt || 1;
   const co2S = co2Car > 0 ? Math.max(0, Math.min(100, (co2Car-co2Alt)/co2Car*100)) : 50;
   const tS   = timeCar > 0 ? Math.max(0, Math.min(100, (2-timeAlt/timeCar)/2*100)) : 50;
-  const cS   = costCar > 0 ? Math.max(0, Math.min(100, (costCar-costAlt)/costCar*100)) : 50;
-  return Math.round(Math.max(0, Math.min(100, (wc*co2S+wt*tS+wk*cS)/ws))*10)/10;
+  return Math.round(Math.max(0, Math.min(100, (wc*co2S+wt*tS)/ws))*10)/10;
 }
 function recalcScores() {
   if (!lastRouteData) return;
   const d = lastRouteData, car = d.car_only;
   ['park_and_ride','auto_transit','bike_and_ride'].forEach(k => {
     if (d[k]) d[k].score = calcScore(
-      car.co2_g, d[k].co2_g, car.total_time_min, d[k].total_time_min,
-      car.cost_eur, d[k].cost_eur);
+      car.co2_g, d[k].co2_g, car.total_time_min, d[k].total_time_min);
   });
   renderResults(d);
 }
@@ -709,7 +697,7 @@ async function computeRoute() {
     arrival_time:  document.getElementById('arrival-time').value,
     weight_co2:    +wCo2.value / 100,
     weight_time:   +wTime.value / 100,
-    weight_cost:   +wCost.value / 100,
+    weight_cost:   0,
     max_bike_km:   +document.getElementById('pref-max-bike-km').value,
     max_walk_m:    +document.getElementById('pref-max-walk-km').value * 1000,
     algorithm:     document.getElementById('algorithm').value,
@@ -853,8 +841,7 @@ function renderResults(d) {
       <span>${car.total_time_min} Min</span></div>
     <div class="card-body">
       <div class="metric"><span>Distanz</span><span class="metric-val">${car.distance_km} km</span></div>
-      <div class="metric"><span>CO2</span><span class="metric-val">${car.co2_g} g</span></div>
-      <div class="metric"><span>Kosten</span><span class="metric-val">${car.cost_eur} €</span></div>
+      <div class="metric"><span>CO₂</span><span class="metric-val">${car.co2_g} g</span></div>
       ${car.estimated ? '<div class="notice">Geschatzte Distanz (OSRM nicht verfugbar)</div>' : ''}
     </div></div>`;
 
@@ -915,7 +902,7 @@ function renderOptionCard(type, title, badgeClass, opt, co2Saved) {
     const sel = document.getElementById('algorithm').value;
     algoHtml = `<div class="algo-toggle">Algorithmenvergleich anzeigen</div>
     <table class="algo-table" style="display:none">
-      <tr><th>Algo</th><th>Zeit</th><th>Knoten</th><th>Kosten</th><th>OK</th></tr>
+      <tr><th>Algo</th><th>Zeit</th><th>Knoten</th><th>Pfadgüte</th><th>OK</th></tr>
       ${['greedy','dijkstra','astar'].map(a => {
         const r = opt.algorithm_results[a];
         const hi = a===sel?' style="background:#e8f0fe;font-weight:600"':'';
@@ -947,8 +934,7 @@ function renderOptionCard(type, title, badgeClass, opt, co2Saved) {
       </div>
       ${segHtml}
       <div class="metric"><span>CO₂</span><span class="metric-val">${opt.co2_g} g</span></div>
-      <div class="metric"><span>CO₂ gespart</span><span class="metric-val" style="color:#2e7d32">▼ ${co2Saved} g</span></div>
-      <div class="metric"><span>Kosten</span><span class="metric-val">${opt.cost_eur} €</span></div>
+      <div class="metric"><span>CO₂ gespart vs. Auto</span><span class="metric-val" style="color:#2e7d32">▼ ${co2Saved} g</span></div>
       ${stInfo}
       ${algoHtml}
     </div></div>`;
