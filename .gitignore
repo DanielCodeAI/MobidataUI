@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Datenbank / Cache
+*.pkl
+*.db
+*.sqlite
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Grosse Datendateien (GTFS)
+data/gtfs/
+data/bwgesamt/
+
+# Docker Volumes
+docker/volumes/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
