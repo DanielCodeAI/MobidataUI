@@ -1,0 +1,11 @@
+route_id,segment_id,mode,distance_km,time_min,notes
+R1,1,bike,190.0,600,Fahrradroute direkt von Stuttgart nach Freiburg
+R2,1,walk,1.0,15,Start → Bahnhof Stuttgart (Fußweg)
+R2,2,pt,192.0,115,Fernzug/Regionalzug Stuttgart → Freiburg
+R2,3,walk,2.0,20,Bahnhof Freiburg → Ziel (Fußweg)
+R3,1,car,200.0,130,Direkte Autofahrt Stuttgart → Freiburg (Autobahn)
+R4,1,car,30.0,25,Start → P+R-Parkplatz bei Stuttgart
+R4,2,walk,0.5,7,Parkplatz → Bahnhof (Fußweg)
+R4,3,pt,164.0,103,Zug vom P+R-Bahnhof → Freiburg
+R4,4,walk,0.5,5,Bahnhof Freiburg → Ziel (Fußweg)
+R5,1,walk,190.0,2400,Gesamter Weg Stuttgart → Freiburg zu Fuß

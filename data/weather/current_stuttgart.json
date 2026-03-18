@@ -1,0 +1,16 @@
+{
+  "latitude": 48.78,
+  "longitude": 9.18,
+  "time": "2026-01-25T12:30",
+  "temperature_c": -0.1,
+  "apparent_temperature_c": -3.1,
+  "precipitation_mm": 0.0,
+  "rain_mm": 0.0,
+  "snowfall_mm": 0.0,
+  "is_rain": false,
+  "is_snow": false,
+  "cloud_cover_pct": 100,
+  "wind_speed_10m_kmh": 2.9,
+  "is_day": true,
+  "weather_code": 3
+}
