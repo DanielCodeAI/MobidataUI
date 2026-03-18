@@ -1,0 +1,18 @@
+mode,description,energy_Wh_per_pkm,source_note
+car_avg,PKW gesamt (alle Antriebe),600,"typischer Mix PKW, inkl. Vorketten, pro Pkm"
+car_ev,Elektro-PKW,180,ca. 18 kWh/100km und 1 Person
+car_hybrid,Hybrid-PKW,450,zwischen Verbrenner und EV
+car_diesel,Diesel-PKW,650,"ca. 6,5 l/100km, 1–1,2 Personen"
+car_petrol,Benzin-PKW,700,"ca. 7 l/100km, 1–1,2 Personen"
+rail_fern,Eisenbahn Fernverkehr,80,"sehr energieeffizient, hohe Auslastung"
+rail_nah,Eisenbahn Nahverkehr gesamt,110,etwas höherer Verbrauch / geringere Auslastung
+rail_nah_elec,Eisenbahn Nahverkehr Elektro,95,etwas effizienter als Gesamtmix
+rail_nah_dies,Eisenbahn Nahverkehr Diesel,150,"Dieselbetrieb, geringere Auslastung"
+bus_fern,Fernlinienbus,70,"hohe Auslastung, effizient pro Pkm"
+bus_nah,Linienbus Nahverkehr gesamt,140,inkl. Stadtbusse mit Stop&Go
+bus_nah_elec,Elektrobus Nahverkehr,120,"elektrischer Antrieb, Stadtverkehr"
+bus_nah_dies,Dieselbus Nahverkehr,160,klassischer Dieselbus
+tram_ubahn,Straßen-/Stadt-/U-Bahn,100,"elektrisch, mittlere Auslastung"
+pedelec,Pedelec (E-Bike),20,"ca. 2 Wh/km pro Person, sehr effizient"
+bike,Fahrrad (ohne Motor),150,keine externe Endenergie (Betrieb)
+walk,Zu Fuß,90,keine externe Endenergie (Betrieb)

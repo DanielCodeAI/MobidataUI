@@ -1,0 +1,18 @@
+mode,description,co2_g_per_pkm,source_note
+car_avg,PKW gesamt (alle Antriebe),164,UBA 2024 Personenverkehr
+car_ev,Elektro-PKW,70,UBA 2024 Personenverkehr
+car_hybrid,Hybrid-PKW,111,UBA 2024 Personenverkehr
+car_diesel,Diesel-PKW,175,UBA 2024 Personenverkehr
+car_petrol,Benzin-PKW,165,UBA 2024 Personenverkehr
+rail_fern,Eisenbahn Fernverkehr,26,UBA 2024 Personenverkehr
+rail_nah,Eisenbahn Nahverkehr gesamt,44,UBA 2024 Personenverkehr
+rail_nah_elec,Eisenbahn Nahverkehr Elektro,35,UBA 2024 Personenverkehr
+rail_nah_dies,Eisenbahn Nahverkehr Diesel,77,UBA 2024 Personenverkehr
+bus_fern,Fernlinienbus,30,UBA 2024 Personenverkehr
+bus_nah,Linienbus Nahverkehr gesamt,90,UBA 2024 Personenverkehr
+bus_nah_elec,Elektrobus Nahverkehr,62,UBA 2024 Personenverkehr
+bus_nah_dies,Dieselbus Nahverkehr,94,UBA 2024 Personenverkehr
+tram_ubahn,Straßen-/Stadt-/U-Bahn,42,UBA 2024 Personenverkehr
+pedelec,Pedelec (E-Bike),3,UBA 2024 Personenverkehr
+bike,"Fahrrad (Betrieb, ohne Vorketten)",0,angenommen 0 g/Pkm
+walk,Zu Fuß (Betrieb),0,angenommen 0 g/Pkm

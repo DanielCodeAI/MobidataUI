@@ -1,0 +1,6 @@
+route_id,name,mode_combo,total_distance_km,total_time_min,walk_km,bike_km,car_km,pt_km,transfers,has_parking,has_charging,description,co2_g,energy_Wh,score_raw,score_0_100,badge_eco_best,badge_fastest,badge_best_match,rank
+R1,Fahrrad (direkt),bike,190.0,600,0.0,190.0,0.0,0.0,0,False,False,Direkte Fahrradroute Stuttgart–Freiburg ohne Umstiege.,0.0,28500.0,0.8950231823377558,89.5,True,False,True,1
+R2,ÖPNV (S-Bahn + Fußweg),walk+pt,195.0,150,3.0,0.0,0.0,192.0,1,False,False,"Fußweg zur Haltestelle, Fernzug nach Freiburg und kurzer Fußweg zum Ziel.",8064.0,19470.0,0.8935278935163069,89.4,False,False,False,2
+R4,Auto → P+R → ÖPNV,car+walk+pt,195.0,140,1.0,0.0,30.0,164.0,1,True,True,"Mit dem Auto zum P+R bei Stuttgart, dort parken/ggf. laden, weiter mit Zug nach Freiburg.",11808.0,34490.0,0.8204380798260147,82.0,False,False,False,3
+R5,Zu Fuß (direkt),walk,190.0,2400,190.0,0.0,0.0,0.0,0,False,False,Theoretische Fußroute Stuttgart–Freiburg (nur als Extremfall für das Scoring).,0.0,17100.0,0.6000000000000001,60.0,False,False,False,4
+R3,Auto (direkt),car,200.0,130,0.0,0.0,200.0,0.0,0,False,False,Direkte Autoroute Stuttgart–Freiburg über Autobahn.,32800.0,120000.0,0.4,40.0,False,True,False,5

@@ -2,23 +2,38 @@
 __pycache__/
 *.py[cod]
 *.pyo
+*.egg-info/
+dist/
+build/
+.env
+
+# Virtuelle Umgebungen
 .venv/
 venv/
-*.egg-info/
-
-# Datenbank / Cache
-*.pkl
-*.db
-*.sqlite
 
 # IDE
 .idea/
 .vscode/
 *.swp
 
-# Grosse Datendateien (GTFS)
+# Datenbank / Cache
+*.pkl
+*.db
+*.sqlite
+
+# Grosse Datendateien (GTFS — separat herunterladen)
 data/gtfs/
 data/bwgesamt/
+data/gtfs/stop_times.txt
+data/gtfs/trips.txt
+data/gtfs/calendar_dates.txt
+data/gtfs/shapes.txt
+
+# Grosse Parking-Rohdaten
+data/parking/parking_sites.json
+data/parking/parking_sites_items.json
+data/parking/parking_sites_items_raw.json
+data/parking/parking_sites_items_deduped.json
 
 # Docker Volumes
 docker/volumes/
