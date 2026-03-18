@@ -290,8 +290,11 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
   </div>
 
   <div class="input-group">
-    <label>Gewunschte Ankunftszeit</label>
-    <input id="arrival-time" type="time" value="08:30">
+    <label>Reisedatum &amp; Ankunftszeit</label>
+    <div style="display:flex;gap:8px">
+      <input id="travel-date" type="date" style="flex:1.2">
+      <input id="arrival-time" type="time" value="08:30" style="flex:1">
+    </div>
   </div>
 
   <div class="input-group">
@@ -399,6 +402,9 @@ input:checked + .toggle-slider:before { transform: translateX(18px); }
 
 <script>
 // ─── Map ─────────────────────────────────────────────────────
+// Datum-Picker mit heutigem Datum vorbelegen
+document.getElementById('travel-date').value = new Date().toISOString().slice(0, 10);
+
 const map = L.map('map').setView([47.9, 7.8], 10);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors', maxZoom: 18,
@@ -699,6 +705,7 @@ async function computeRoute() {
   const body = {
     start_address: document.getElementById('start-addr').value,
     end_address:   document.getElementById('end-addr').value,
+    travel_date:   document.getElementById('travel-date').value,
     arrival_time:  document.getElementById('arrival-time').value,
     weight_co2:    +wCo2.value / 100,
     weight_time:   +wTime.value / 100,
@@ -749,6 +756,24 @@ function renderWeather(d) {
   wp.innerHTML = html;
 }
 
+// ─── Hilfsfunktionen ─────────────────────────────────────────
+function minsToTime(mins) {
+  if (mins == null) return null;
+  const h = Math.floor(mins / 60) % 24;
+  const m = mins % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
+function transitIcon(routeName) {
+  if (!routeName) return '🚌';
+  const n = routeName.toUpperCase();
+  if (/^(IC|ICE|EC|EN|TGV|RJ|NJ)/.test(n)) return '🚄';
+  if (/^(RE|RB|IRE|ME|ERX|BOB|AKN)/.test(n)) return '🚂';
+  if (/^S\d/.test(n)) return '🚇';
+  if (/^(U\d|U-)/.test(n)) return '🚇';
+  return '🚌';
+}
+
 // ─── Ergebnisse rendern ───────────────────────────────────────
 function co2Bar(label, val, carVal, color) {
   const pct = carVal > 0 ? Math.round(val/carVal*100) : 0;
@@ -778,6 +803,15 @@ function co2EquivHtml(savedG) {
 function renderResults(d) {
   const resultsDiv = document.getElementById('results');
   document.getElementById('results-panel').classList.add('open');
+
+  // Header mit Datum & Ankunftszeit aktualisieren
+  if (d.travel_date && d.arrival_time) {
+    const dt = new Date(d.travel_date + 'T12:00:00');
+    const dayStr = dt.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+    document.getElementById('results-panel-header').textContent =
+      `Ergebnis · ${dayStr} · Ankunft ${d.arrival_time}`;
+  }
+
   let html = '';
 
   // CO2-Vergleich
@@ -848,20 +882,29 @@ function renderOptionCard(type, title, badgeClass, opt, co2Saved) {
   const isBest = lastRouteData?.best_match?.best_mode?.name === opt.name;
 
   const segHtml = opt.segments.map(s => {
-    const icon = s.type==='car'?'🚗':s.type==='bike'?'🚲':s.type==='transit'?'🚆':'🚶';
+    const icon = s.type==='car'?'🚗':s.type==='bike'?'🚲':s.type==='transit'?'🚌':'🚶';
     const dist = s.distance_km ? `${s.distance_km} km` : `${s.distance_m} m`;
     let transitDetail = '';
     if (s.type==='transit' && s.path?.length > 1) {
-      const legs = []; let curLbl='', curRn='';
+      // Abfahrtszeit aus erstem Pfad-Schritt mit departure-Wert
+      const firstDep = s.path.find(p => p.departure != null && p.route_name && p.route_name !== 'walk');
+      const depTime = firstDep ? minsToTime(firstDep.departure) : null;
+      const lastArr = [...s.path].reverse().find(p => p.arrival != null);
+      const arrTime = lastArr ? minsToTime(lastArr.arrival) : null;
+
+      // Linien sammeln (nur Nummern, kein Label)
+      const legs = []; let curRn = '';
       for (const step of s.path) {
-        const lbl = step.route_type_label||'', rn = step.route_name||'';
-        if (rn && rn!=='walk' && (lbl!==curLbl || rn!==curRn)) {
-          curLbl=lbl; curRn=rn;
-          const ti = lbl==='Tram'?'🚊':lbl==='Bus'?'🚌':'🚉';
-          legs.push(`${ti} ${lbl} ${rn}`);
+        const rn = step.route_name || '';
+        if (rn && rn !== 'walk' && rn !== curRn) {
+          curRn = rn;
+          legs.push(`${transitIcon(rn)} ${rn}`);
         }
       }
-      if (legs.length) transitDetail = `<div style="font-size:.78em;color:#555;margin:2px 0 4px 18px">${legs.join(' → ')}</div>`;
+      const timeInfo = depTime
+        ? `<span style="color:var(--accent);font-weight:700">Ab ${depTime}${arrTime ? ' → An ' + arrTime : ''}</span> · `
+        : '';
+      if (legs.length) transitDetail = `<div style="font-size:.78em;color:#555;margin:2px 0 4px 18px">${timeInfo}${legs.join(' → ')}</div>`;
     }
     return `<div class="metric"><span>${icon} ${s.from} → ${s.to}</span>
       <span class="metric-val">${s.duration_min} Min (${dist})</span></div>${transitDetail}`;

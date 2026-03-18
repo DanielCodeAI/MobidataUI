@@ -273,6 +273,7 @@ class RouteRequest(BaseModel):
     start_address: Optional[str] = None
     end_address: Optional[str] = None
     arrival_time: str = "08:30"
+    travel_date: str = Field(default="", description="Reisedatum YYYY-MM-DD, leer = heute")
     weight_co2: float = Field(default=0.4, ge=0, le=1)
     weight_time: float = Field(default=0.35, ge=0, le=1)
     weight_cost: float = Field(default=0.25, ge=0, le=1)
@@ -469,6 +470,9 @@ async def compute_route(req: RouteRequest):
         weather_destination=weather_destination,
     )
 
+    from datetime import date as _date
+    travel_date = req.travel_date if req.travel_date else _date.today().isoformat()
+
     return {
         "car_only": car_only,
         "park_and_ride": park_and_ride,
@@ -481,6 +485,8 @@ async def compute_route(req: RouteRequest):
         "reason_at": at_reason,
         "reason_br": br_reason,
         "best_match": best_match_result,
+        "travel_date": travel_date,
+        "arrival_time": req.arrival_time,
         "weather_origin": weather_origin,
         "weather_destination": weather_destination,
     }
