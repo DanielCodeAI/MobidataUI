@@ -15,8 +15,90 @@ Bewertet Routen nach Zeit, CO2 und Kosten — mit Best-Match-Empfehlung, Wetteri
 | [Python](https://www.python.org/downloads/) | 3.9+ | Backend |
 | Browser | aktuell | Frontend |
 
-> **Windows:** Docker Desktop muss mit **WSL2-Backend** installiert sein.
-> Beim Python-Download auf Windows den Haken bei **"Add Python to PATH"** setzen.
+---
+
+## Installation der Voraussetzungen
+
+### Docker Desktop installieren
+
+Docker wird benoetigt, um die Neo4j-Datenbank zu starten. Einmalige Installation:
+
+**Windows:**
+1. Sicherstellen, dass Windows 10/11 (64-bit) installiert ist
+2. WSL2 aktivieren — PowerShell als Administrator oeffnen und ausfuehren:
+   ```powershell
+   wsl --install
+   ```
+   Danach den PC neu starten.
+3. [Docker Desktop fuer Windows](https://www.docker.com/products/docker-desktop/) herunterladen und installieren
+4. Beim ersten Start: **"Use WSL 2 instead of Hyper-V"** auswaehlen (wird meist automatisch empfohlen)
+5. Pruefung — neues Terminal oeffnen:
+   ```powershell
+   docker --version
+   ```
+   Erwartete Ausgabe: `Docker version 24.x.x`
+
+**macOS:**
+1. [Docker Desktop fuer Mac](https://www.docker.com/products/docker-desktop/) herunterladen
+   - Apple Silicon (M1/M2/M3): `Mac with Apple Chip` auswaehlen
+   - Intel Mac: `Mac with Intel Chip` auswaehlen
+2. `.dmg` oeffnen und Docker in den Applications-Ordner ziehen
+3. Docker starten (erscheint als Wal-Symbol in der Menubar)
+4. Pruefung im Terminal:
+   ```bash
+   docker --version
+   ```
+
+**Linux (Ubuntu/Debian):**
+```bash
+sudo apt update
+sudo apt install -y docker.io docker-compose-plugin
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER
+# Neu einloggen, damit Gruppe aktiv wird
+```
+
+---
+
+### Python installieren
+
+**Windows:**
+1. [Python herunterladen](https://www.python.org/downloads/) (Version 3.9 oder neuer)
+2. Installer starten — wichtig: Haken bei **"Add Python to PATH"** setzen
+3. Pruefung:
+   ```powershell
+   python --version
+   ```
+
+**macOS:**
+```bash
+# Mit Homebrew (empfohlen):
+brew install python3
+
+# Oder direkt von python.org herunterladen
+```
+
+**Linux:**
+```bash
+sudo apt install -y python3 python3-pip python3-venv
+```
+
+---
+
+### Git installieren (fuer `git clone`)
+
+**Windows:** [Git fuer Windows](https://git-scm.com/download/win) herunterladen und installieren
+
+**macOS:**
+```bash
+brew install git
+# oder: xcode-select --install
+```
+
+**Linux:**
+```bash
+sudo apt install -y git
+```
 
 ---
 
